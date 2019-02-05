@@ -22,7 +22,7 @@ import io.vertx.reactivex.core.Vertx;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,9 +55,9 @@ class TaskEngineTest {
     execute.subscribe(
         onSuccess -> {
           try {
-            Assert.assertEquals(1, onSuccess.size());
-            Assert.assertEquals(Status.SUCCESS, onSuccess.get(0).getStatus());
-            Assert.assertTrue(onSuccess.get(0).getPayload().containsKey("task-1"));
+            Assertions.assertEquals(1, onSuccess.size());
+            Assertions.assertEquals(Status.SUCCESS, onSuccess.get(0).getStatus());
+            Assertions.assertTrue(onSuccess.get(0).getPayload().containsKey("task-1"));
             testContext.completeNow();
           } catch (Exception e) {
             testContext.failNow(e);
@@ -66,7 +66,7 @@ class TaskEngineTest {
           testContext.failNow(onError);
         });
 
-    Assert.assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+    Assertions.assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
     if (testContext.failed()) {
       throw testContext.causeOfFailure();
     }
@@ -86,10 +86,10 @@ class TaskEngineTest {
     execute.subscribe(
         onSuccess -> {
           try {
-            Assert.assertEquals(1, onSuccess.size());
-            Assert.assertEquals(Status.SUCCESS, onSuccess.get(0).getStatus());
-            Assert.assertTrue(onSuccess.get(0).getPayload().containsKey("task-1"));
-            Assert.assertTrue(onSuccess.get(0).getPayload().containsKey("task-2"));
+            Assertions.assertEquals(1, onSuccess.size());
+            Assertions.assertEquals(Status.SUCCESS, onSuccess.get(0).getStatus());
+            Assertions.assertTrue(onSuccess.get(0).getPayload().containsKey("task-1"));
+            Assertions.assertTrue(onSuccess.get(0).getPayload().containsKey("task-2"));
             testContext.completeNow();
           } catch (Exception e) {
             testContext.failNow(e);
@@ -98,7 +98,7 @@ class TaskEngineTest {
           testContext.failNow(onError);
         });
 
-    Assert.assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+    Assertions.assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
     if (testContext.failed()) {
       throw testContext.causeOfFailure();
     }
@@ -118,9 +118,9 @@ class TaskEngineTest {
     execute.subscribe(
         onSuccess -> {
           try {
-            Assert.assertEquals(1, onSuccess.size());
-            Assert.assertEquals(Status.FAILED, onSuccess.get(0).getStatus());
-            Assert.assertTrue(onSuccess.get(0).getPayload().isEmpty());
+            Assertions.assertEquals(1, onSuccess.size());
+            Assertions.assertEquals(Status.FAILED, onSuccess.get(0).getStatus());
+            Assertions.assertTrue(onSuccess.get(0).getPayload().isEmpty());
             testContext.completeNow();
           } catch (Exception e) {
             testContext.failNow(e);
@@ -129,7 +129,7 @@ class TaskEngineTest {
           testContext.failNow(onError);
         });
 
-    Assert.assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+    Assertions.assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
     if (testContext.failed()) {
       throw testContext.causeOfFailure();
     }
@@ -151,10 +151,10 @@ class TaskEngineTest {
     execute.subscribe(
         onSuccess -> {
           try {
-            Assert.assertEquals(1, onSuccess.size());
-            Assert.assertEquals(Status.FAILED, onSuccess.get(0).getStatus());
-            Assert.assertTrue(onSuccess.get(0).getPayload().containsKey("task-1"));
-            Assert.assertFalse(onSuccess.get(0).getPayload().containsKey("task-2"));
+            Assertions.assertEquals(1, onSuccess.size());
+            Assertions.assertEquals(Status.FAILED, onSuccess.get(0).getStatus());
+            Assertions.assertTrue(onSuccess.get(0).getPayload().containsKey("task-1"));
+            Assertions.assertFalse(onSuccess.get(0).getPayload().containsKey("task-2"));
             testContext.completeNow();
           } catch (Exception e) {
             testContext.failNow(e);
@@ -163,7 +163,7 @@ class TaskEngineTest {
           testContext.failNow(onError);
         });
 
-    Assert.assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+    Assertions.assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
     if (testContext.failed()) {
       throw testContext.causeOfFailure();
     }

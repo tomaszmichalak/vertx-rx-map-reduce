@@ -17,8 +17,8 @@ package pl.tomaszmichalak.flowgraph.engine;
 
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.compress.utils.Lists;
 import pl.tomaszmichalak.flowgraph.task.Task;
 
 public class TaskEngine {
@@ -28,7 +28,7 @@ public class TaskEngine {
         .map(FragmentEvent::new)
         .map(FragmentEvent::execute)
         .flatMap(Single::toFlowable)
-        .reduce(Lists.newArrayList(), (list, item) -> {
+        .reduce(new ArrayList<>(), (list, item) -> {
           list.add(item);
           return list;
         });

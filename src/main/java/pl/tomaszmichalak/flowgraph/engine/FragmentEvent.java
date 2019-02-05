@@ -56,8 +56,6 @@ public class FragmentEvent {
         .flatMap(
             currentEvent -> new FragmentProcessorProxy()
                 .callProcessor(currentEvent.getFragment().getFlow().getProcessor(), currentEvent)
-                .doOnSuccess(processedEvent -> processedEvent.getFragment()
-                    .setBody(processedEvent.getPayload().encode()))
                 .doOnSuccess(processedEvent -> processedEvent.setStatus(Status.SUCCESS))
                 .onErrorResumeNext(error -> {
                   currentEvent.setStatus(Status.FAILED);
