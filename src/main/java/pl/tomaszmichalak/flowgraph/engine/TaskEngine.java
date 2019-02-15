@@ -17,16 +17,17 @@ package pl.tomaszmichalak.flowgraph.engine;
 
 import io.reactivex.Flowable;
 import io.reactivex.Single;
+import io.vertx.core.Vertx;
 import java.util.ArrayList;
 import java.util.List;
 import pl.tomaszmichalak.flowgraph.task.Task;
 
 public class TaskEngine {
 
-  public Single<List<FragmentEvent>> execute(Task payload) {
+  public Single<List<FragmentEvent>> execute(Vertx vertx, Task payload) {
     return Flowable.fromIterable(payload.getFragments())
         .map(FragmentEvent::new)
-        .map(FragmentEvent::execute)
+        .map(event -> event.execute(vertx))
         .flatMap(Single::toFlowable)
         .reduce(new ArrayList<>(), (list, item) -> {
           list.add(item);

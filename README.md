@@ -15,5 +15,10 @@ the code.
 
 ## Tests
 The algorithm is validated in pl.tomaszmichalak.flowgraph.engine.TaskEngineTest.
+
+## Changelog
+
+### Update 15.02.2019
+Added failing proxy with Circuit Breaker fallback & Unit test. 
  
   

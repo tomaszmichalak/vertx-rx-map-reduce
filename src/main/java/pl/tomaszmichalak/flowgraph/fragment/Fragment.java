@@ -33,7 +33,9 @@ public class Fragment {
   }
 
   public Fragment nextFlow() {
-    this.flow = flow.getNext();
+    if (flow != null) {
+      this.flow = flow.getNext();
+    }
     return this;
   }
 

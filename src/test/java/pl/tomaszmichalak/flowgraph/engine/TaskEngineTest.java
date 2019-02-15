@@ -49,7 +49,7 @@ class TaskEngineTest {
     Task divisibleTask = new Task(Collections.singletonList(new Fragment(flow, "body")));
 
     // when
-    Single<List<FragmentEvent>> execute = engine.execute(divisibleTask);
+    Single<List<FragmentEvent>> execute = engine.execute(vertx.getDelegate(), divisibleTask);
 
     // then
     execute.subscribe(
@@ -80,7 +80,7 @@ class TaskEngineTest {
     Task divisibleTask = new Task(Collections.singletonList(new Fragment(flow, "body")));
 
     // when
-    Single<List<FragmentEvent>> execute = engine.execute(divisibleTask);
+    Single<List<FragmentEvent>> execute = engine.execute(vertx.getDelegate(), divisibleTask);
 
     // then
     execute.subscribe(
@@ -112,7 +112,7 @@ class TaskEngineTest {
     Task divisibleTask = new Task(Collections.singletonList(new Fragment(flow, "body")));
 
     // when
-    Single<List<FragmentEvent>> execute = engine.execute(divisibleTask);
+    Single<List<FragmentEvent>> execute = engine.execute(vertx.getDelegate(), divisibleTask);
 
     // then
     execute.subscribe(
@@ -145,7 +145,7 @@ class TaskEngineTest {
     Task divisibleTask = new Task(Collections.singletonList(new Fragment(flow, "body")));
 
     // when
-    Single<List<FragmentEvent>> execute = engine.execute(divisibleTask);
+    Single<List<FragmentEvent>> execute = engine.execute(vertx.getDelegate(), divisibleTask);
 
     // then
     execute.subscribe(
@@ -164,6 +164,39 @@ class TaskEngineTest {
         });
 
     Assertions.assertTrue(testContext.awaitCompletion(5, TimeUnit.SECONDS));
+    if (testContext.failed()) {
+      throw testContext.causeOfFailure();
+    }
+  }
+
+  @Test
+  public void execute_whenOneFragmentWithOneProcessor_expectFallbackEntryInPayload(
+      VertxTestContext testContext, Vertx vertx) throws Throwable {
+    // given
+    engine = new TaskEngine();
+    Flow flow = new Flow().setProcessor("circuit-breaker-fallback").setNext(
+        new Flow().setProcessor("circuit-breaker-fallback").setNext(
+            new Flow().setProcessor("task-2")));
+
+    Task divisibleTask = new Task(Collections.singletonList(new Fragment(flow, "body")));
+
+    // when
+    Single<List<FragmentEvent>> execute = engine.execute(vertx.getDelegate(), divisibleTask);
+
+    // then
+    execute.subscribe(
+        onSuccess -> testContext.verify(() -> {
+          try {
+            Assertions.assertEquals(1, onSuccess.size());
+            Assertions
+                .assertEquals("my-fallback-value",
+                    onSuccess.get(0).getPayload().getString("circuit-breaker-fallback"));
+            testContext.completeNow();
+          } catch (Exception e) {
+            testContext.failNow(e);
+          }
+        }), testContext::failNow);
+    Assertions.assertTrue(testContext.awaitCompletion(120, TimeUnit.SECONDS));
     if (testContext.failed()) {
       throw testContext.causeOfFailure();
     }

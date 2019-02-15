@@ -17,6 +17,9 @@ package pl.tomaszmichalak.flowgraph.fragment;
 
 import io.reactivex.Single;
 import io.reactivex.SingleObserver;
+import io.vertx.circuitbreaker.CircuitBreaker;
+import io.vertx.circuitbreaker.CircuitBreakerOptions;
+import io.vertx.core.Vertx;
 import java.util.HashMap;
 import java.util.Map;
 import pl.tomaszmichalak.flowgraph.engine.FragmentEvent;
@@ -25,20 +28,22 @@ public class FragmentProcessorProxy {
 
   private Map<String, FragmentProcessor> jobs;
 
-  public FragmentProcessorProxy() {
-    this.jobs = init();
+  public FragmentProcessorProxy(Vertx vertx) {
+    this.jobs = init(vertx);
   }
 
   public Single<FragmentEvent> callProcessor(String address, FragmentEvent event) {
+
     return jobs.get(address).process(event);
   }
 
-  private Map<String, FragmentProcessor> init() {
+  private Map<String, FragmentProcessor> init(Vertx vertx) {
     Map<String, FragmentProcessor> registered = new HashMap<>();
     registerProcessorProxy(registered, "task-1");
     registerProcessorProxy(registered, "task-2");
     registerProcessorProxy(registered, "task-3");
     registerFailingProcessorProxy(registered, "failing-1");
+    registerLongRunningProcessorWithFallbackProxy(registered, "circuit-breaker-fallback", vertx);
     return registered;
   }
 
@@ -49,7 +54,8 @@ public class FragmentProcessorProxy {
         String body = flowContext.getFragment().getBody();
         // do some logic with flow context
         flowContext.getPayload().put(address, address + "-value");
-        System.out.println("[SuccessProcessor][" + address + "] responds with value: " + address + "-value");
+        System.out.println(
+            "[SuccessProcessor][" + address + "] responds with value: " + address + "-value");
         observer.onSuccess(flowContext);
       }
     });
@@ -61,6 +67,38 @@ public class FragmentProcessorProxy {
       protected void subscribeActual(SingleObserver<? super FragmentEvent> observer) {
         System.out.println("[FailingProcessor][" + address + "] called!");
         observer.onError(new IllegalStateException());
+      }
+    });
+  }
+
+  public void registerLongRunningProcessorWithFallbackProxy(Map<String, FragmentProcessor> jobs,
+      String address, Vertx vertx) {
+    jobs.put(address, flowContext -> new Single<FragmentEvent>() {
+      CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
+          new CircuitBreakerOptions()
+              .setMaxFailures(1) // number of failure before opening the circuit
+              .setTimeout(500) // consider a failure if the operation does not succeed in time
+              .setFallbackOnFailure(true) // do we call the fallback on failure
+              .setResetTimeout(10000) // time spent in open state before attempting to re-try
+      ).openHandler(v -> {
+        System.out.println("Circuit opened");
+      }).closeHandler(v -> {
+        System.out.println("Circuit closed");
+      });
+
+      @Override
+      protected void subscribeActual(SingleObserver<? super FragmentEvent> observer) {
+        breaker.executeWithFallback(future -> vertx.setTimer(2000, time -> {
+          flowContext.getPayload().put(address, address + "-value");
+          System.out.println(
+              "[SuccessProcessor][" + address + "] responds with value: " + address + "-value");
+          observer.onSuccess(flowContext);
+          future.complete(flowContext);
+        }), v -> {
+          flowContext.getPayload().put(address, "my-fallback-value");
+          observer.onSuccess(flowContext);
+          return flowContext;
+        });
       }
     });
   }

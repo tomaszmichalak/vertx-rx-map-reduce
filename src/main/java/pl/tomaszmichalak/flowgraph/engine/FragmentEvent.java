@@ -16,6 +16,7 @@
 package pl.tomaszmichalak.flowgraph.engine;
 
 import io.reactivex.Single;
+import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import pl.tomaszmichalak.flowgraph.fragment.Fragment;
 import pl.tomaszmichalak.flowgraph.fragment.FragmentProcessorProxy;
@@ -51,10 +52,10 @@ public class FragmentEvent {
     return payload;
   }
 
-  public Single<FragmentEvent> execute() {
+  public Single<FragmentEvent> execute(Vertx vertx) {
     return Single.just(this)
         .flatMap(
-            currentEvent -> new FragmentProcessorProxy()
+            currentEvent -> new FragmentProcessorProxy(vertx)
                 .callProcessor(currentEvent.getFragment().getFlow().getProcessor(), currentEvent)
                 .doOnSuccess(processedEvent -> processedEvent.setStatus(Status.SUCCESS))
                 .onErrorResumeNext(error -> {
@@ -69,7 +70,7 @@ public class FragmentEvent {
           if (event.getStatus() == Status.FAILED || event.getFragment().getFlow() == null) {
             return Single.just(event);
           } else {
-            return event.execute();
+            return event.execute(vertx);
           }
         });
   }
