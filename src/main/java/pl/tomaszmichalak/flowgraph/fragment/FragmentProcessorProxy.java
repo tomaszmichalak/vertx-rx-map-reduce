@@ -74,26 +74,22 @@ public class FragmentProcessorProxy {
   public void registerLongRunningProcessorWithFallbackProxy(Map<String, FragmentProcessor> jobs,
       String address, Vertx vertx) {
     jobs.put(address, flowContext -> new Single<FragmentEvent>() {
-      CircuitBreaker breaker = CircuitBreaker.create("my-circuit-breaker", vertx,
+      CircuitBreaker breaker = CircuitBreaker.create(address + "-circuit-breaker", vertx,
           new CircuitBreakerOptions()
-              .setMaxFailures(1) // number of failure before opening the circuit
-              .setTimeout(500) // consider a failure if the operation does not succeed in time
-              .setFallbackOnFailure(true) // do we call the fallback on failure
-              .setResetTimeout(10000) // time spent in open state before attempting to re-try
-      ).openHandler(v -> {
-        System.out.println("Circuit opened");
-      }).closeHandler(v -> {
-        System.out.println("Circuit closed");
-      });
+              .setMaxFailures(1)
+              .setTimeout(500)
+              .setFallbackOnFailure(true)
+              .setResetTimeout(10000))
+          .openHandler(v -> System.out.println("Circuit opened"))
+          .closeHandler(v -> System.out.println("Circuit closed"));
 
       @Override
       protected void subscribeActual(SingleObserver<? super FragmentEvent> observer) {
         breaker.executeWithFallback(future -> vertx.setTimer(2000, time -> {
-          flowContext.getPayload().put(address, address + "-value");
-          System.out.println(
-              "[SuccessProcessor][" + address + "] responds with value: " + address + "-value");
-          observer.onSuccess(flowContext);
-          future.complete(flowContext);
+          IllegalStateException cause = new IllegalStateException(
+              "Should never be executed, timeout reached.");
+          observer.onError(cause);
+          future.fail(cause);
         }), v -> {
           flowContext.getPayload().put(address, "my-fallback-value");
           observer.onSuccess(flowContext);
